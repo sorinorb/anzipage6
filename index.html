@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Kreatif | Akses Terbatas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: background 0.8s ease;
+        }
+        
+        body.unlocked {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        /* Lock Screen - Clean Design */
+        .lock-container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            padding: 50px 40px;
+            border-radius: 25px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        body.unlocked .lock-container {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+            pointer-events: none;
+        }
+        
+        .lock-icon {
+            font-size: 56px;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.95);
+            filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .title {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 20px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 35px;
+            text-transform: uppercase;
+        }
+        
+        .pin-display {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 45px;
+        }
+        
+        .pin-dot {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .pin-dot.filled {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            border-color: #74b9ff;
+            transform: scale(1.3);
+            box-shadow: 0 0 20px rgba(116, 185, 255, 0.4);
+        }
+        
+        .pin-dot.filled::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: glow 1.5s infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        /* Keypad Design */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .key {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 300;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        .key:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.25);
+        }
+        
+        .key:active {
+            transform: scale(0.93);
+            transition: transform 0.1s;
+        }
+        
+        .key.function {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.18);
+            font-size: 24px;
+        }
+        
+        .message {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 25px;
+            min-height: 24px;
+            font-size: 15px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+        
+        .message.show {
+            opacity: 1;
+        }
+        
+        .message.error {
+            color: #ff7675;
+        }
+        
+        .message.success {
+            color: #55efc4;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 900px;
+            position: relative;
+        }
+        
+        .main-content.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Content Design */
+        .content-header {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: white;
+            padding: 70px 50px;
+            border-radius: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .content-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.05)"/></svg>');
+            background-size: cover;
+        }
+        
+        .content-header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content-header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content-body {
+            background: white;
+            border-radius: 30px;
+            padding: 60px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section h2 {
+            color: #1a2980;
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            padding-left: 20px;
+            border-left: 5px solid #26d0ce;
+        }
+        
+        .section p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 30px;
+            border-radius: 20px;
+            margin: 30px 0;
+            border-left: 5px solid #74b9ff;
+        }
+        
+        /* Magic Exit Button - Transparan di Sudut Kanan Bawah */
+        .magic-exit-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(15px);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(30px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .magic-exit-btn.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        
+        .magic-exit-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 
+                0 15px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .magic-exit-btn:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+        
+        .magic-exit-btn::before {
+            content: '🚪';
+            font-size: 28px;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+        
+        .magic-exit-btn:hover::before {
+            transform: rotate(15deg) scale(1.2);
+        }
+        
+        /* Magic Particle Effect */
+        .magic-exit-btn::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(116, 185, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            z-index: -1;
+            animation: pulse-ring 3s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% {
+                opacity: 0;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.3);
+            }
+        }
+        
+        /* Glow Effect on Scroll */
+        .magic-exit-btn.scroll-glow {
+            animation: scroll-glow 2s infinite alternate;
+        }
+        
+        @keyframes scroll-glow {
+            0% {
+                box-shadow: 
+                    0 10px 30px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 0 20px rgba(116, 185, 255, 0.1);
+            }
+            100% {
+                box-shadow: 
+                    0 10px 30px rgba(0, 0, 0, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                    0 0 40px rgba(116, 185, 255, 0.3);
+            }
+        }
+        
+        /* Tooltip untuk tombol magic */
+        .magic-tooltip {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+            margin-bottom: 15px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .magic-exit-btn:hover .magic-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(116, 185, 255, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            animation: float-particle 3s infinite;
+        }
+        
+        @keyframes float-particle {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 0;
+            }
+            100% {
+                transform: translate(var(--tx, 0), var(--ty, -100px)) scale(0);
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .lock-container { padding: 40px 25px; }
+            .key { width: 70px; height: 70px; font-size: 24px; }
+            .content-header { padding: 50px 30px; }
+            .content-header h1 { font-size: 2.5rem; }
+            .content-body { padding: 40px 30px; }
+            .section h2 { font-size: 1.8rem; }
+            .magic-exit-btn {
+                bottom: 30px;
+                right: 30px;
+                width: 60px;
+                height: 60px;
+            }
+            .magic-exit-btn::before {
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .key { width: 65px; height: 65px; font-size: 22px; }
+            .pin-dot { width: 16px; height: 16px; }
+            .magic-exit-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Lock Screen -->
+    <div class="lock-container" id="lockContainer">
+        <div class="lock-icon">🔐</div>
+        <div class="title">Portal Kreatif</div>
+        
+        <div class="pin-display">
+            <div class="pin-dot" id="dot1"></div>
+            <div class="pin-dot" id="dot2"></div>
+            <div class="pin-dot" id="dot3"></div>
+            <div class="pin-dot" id="dot4"></div>
+            <div class="pin-dot" id="dot5"></div>
+            <div class="pin-dot" id="dot6"></div>
+        </div>
+        
+        <div class="keypad">
+            <div class="key" onclick="addDigit('1')">1</div>
+            <div class="key" onclick="addDigit('2')">2</div>
+            <div class="key" onclick="addDigit('3')">3</div>
+            <div class="key" onclick="addDigit('4')">4</div>
+            <div class="key" onclick="addDigit('5')">5</div>
+            <div class="key" onclick="addDigit('6')">6</div>
+            <div class="key" onclick="addDigit('7')">7</div>
+            <div class="key" onclick="addDigit('8')">8</div>
+            <div class="key" onclick="addDigit('9')">9</div>
+            <div class="key function" onclick="clearPin()">C</div>
+            <div class="key" onclick="addDigit('0')">0</div>
+            <div class="key function" onclick="deleteDigit()">⌫</div>
+        </div>
+        
+        <div class="message" id="message"></div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="content-header">
+            <h1>🎨 Lika-Liku Desainer Grafis</h1>
+            <p>Perjalanan kreatif dalam dunia desain visual yang terus berevolusi</p>
+        </div>
+        
+        <div class="content-body">
+            <div class="section">
+                <h2>Transformasi Digital</h2>
+                <p>Industri desain grafis telah mengalami revolusi yang signifikan sejak era digital. Dari penggunaan alat tradisional seperti pensil dan kertas hingga software canggih seperti Adobe Creative Suite dan Figma, perjalanan ini penuh dengan adaptasi dan inovasi.</p>
+                
+                <div class="highlight-box">
+                    <p><strong>Fakta menarik:</strong> Desainer grafis modern menghabiskan rata-rata 60% waktu mereka untuk berkolaborasi dengan tim lintas fungsi, sebuah perubahan drastis dari model kerja soliter di masa lalu.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Tantangan Kontemporer</h2>
+                <p>Di era teknologi yang berkembang pesat, desainer grafis dihadapkan pada tantangan unik. Mereka tidak hanya harus menguasai aspek estetika, tetapi juga memahami teknologi, psikologi pengguna, dan strategi bisnis.</p>
+                
+                <p>Keseimbangan antara kreativitas artistik dan kebutuhan fungsional menjadi titik kritis dalam setiap proyek desain yang sukses.</p>
+            </div>
+            
+            <div class="section">
+                <h2>Masa Depan Desain</h2>
+                <p>Dengan munculnya teknologi seperti kecerdasan buatan, realitas virtual, dan realitas tertambah, masa depan desain grafis akan terus berevolusi. Desainer masa depan perlu menjadi pembelajar sepanjang hayat yang mampu beradaptasi dengan perubahan cepat dalam teknologi dan tren.</p>
+                
+                <p>Kemampuan untuk berpikir sistemik, memahami pengalaman pengguna, dan mengintegrasikan teknologi baru akan menjadi keterampilan yang sangat berharga dalam ekosistem desain yang terus berkembang.</p>
+            </div>
+            
+            <div class="section">
+                <h2>Pentingnya Adaptasi</h2>
+                <p>Dalam dunia desain yang terus berubah, kemampuan beradaptasi adalah kunci kesuksesan. Desainer yang mampu mempelajari tool baru, memahami tren terkini, dan mengintegrasikan feedback secara efektif akan tetap relevan di tengah perubahan industri.</p>
+                
+                <p>Portofolio yang dinamis dan kemampuan networking yang kuat juga menjadi faktor penentu dalam karir desain yang berkelanjutan.</p>
+            </div>
+            
+            <div class="section">
+                <h2>Etika dalam Desain</h2>
+                <p>Seiring dengan perkembangan teknologi, isu etika dalam desain menjadi semakin penting. Desainer memiliki tanggung jawab untuk menciptakan karya yang tidak hanya estetis dan fungsional, tetapi juga etis dan bertanggung jawab secara sosial.</p>
+                
+                <p>Pertimbangan seperti aksesibilitas, keberlanjutan, dan dampak sosial harus menjadi bagian integral dari proses desain modern.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 50px; padding-top: 30px; border-top: 1px solid #eee;">
+                <p style="color: #666; font-size: 0.9rem;">Makalah Digital Terproteksi • © 2024 Creative Design Initiative</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Magic Exit Button - Akan Muncul Setelah Login -->
+    <div class="magic-exit-btn" id="magicExitBtn" onclick="magicLogout()">
+        <div class="magic-tooltip">Kembali ke Portal</div>
+    </div>
+
+    <script>
+        // Variables
+        let currentPin = '';
+        let isUnlocked = false;
+        let scrollTimer = null;
+        
+        // Check login status
+        function checkLoginStatus() {
+            const unlocked = localStorage.getItem('creative_portal_unlocked') === 'true';
+            const unlockTime = localStorage.getItem('portal_unlock_time');
+            const currentTime = Date.now();
+            
+            // Auto logout after 2 hours
+            if (unlockTime && (currentTime - parseInt(unlockTime)) > 7200000) {
+                localStorage.removeItem('creative_portal_unlocked');
+                localStorage.removeItem('portal_unlock_time');
+            } else if (unlocked) {
+                unlockSystem();
+            }
+        }
+        
+        // Update pin dots
+        function updateDots() {
+            for (let i = 1; i <= 6; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                dot.classList.toggle('filled', i <= currentPin.length);
+            }
+        }
+        
+        // Add digit to pin
+        function addDigit(digit) {
+            if (currentPin.length < 6) {
+                currentPin += digit;
+                updateDots();
+                
+                // Button animation
+                const button = event.target;
+                button.style.transform = 'scale(0.92)';
+                setTimeout(() => {
+                    button.style.transform = '';
+                }, 150);
+                
+                // Auto verify when 6 digits entered
+                if (currentPin.length === 6) {
+                    setTimeout(verifyPin, 300);
+                }
+            }
+        }
+        
+        // Delete last digit
+        function deleteDigit() {
+            if (currentPin.length > 0) {
+                currentPin = currentPin.slice(0, -1);
+                updateDots();
+                hideMessage();
+            }
+        }
+        
+        // Clear all digits
+        function clearPin() {
+            currentPin = '';
+            updateDots();
+            hideMessage();
+        }
+        
+        // Verify PIN
+        function verifyPin() {
+            const now = new Date();
+            
+            // Correct PIN: HHMMDD
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const correctPin = hours + minutes + day;
+            
+            const message = document.getElementById('message');
+            const container = document.getElementById('lockContainer');
+            
+            if (currentPin === correctPin) {
+                // Success
+                showMessage('Akses diberikan...', 'success');
+                document.querySelector('.lock-icon').textContent = '✅';
+                
+                // Save login state
+                localStorage.setItem('creative_portal_unlocked', 'true');
+                localStorage.setItem('portal_unlock_time', Date.now().toString());
+                
+                // Unlock after delay
+                setTimeout(unlockSystem, 800);
+            } else {
+                // Failed
+                showMessage('Akses ditolak', 'error');
+                container.classList.add('shake');
+                
+                // Reset after delay
+                setTimeout(() => {
+                    currentPin = '';
+                    updateDots();
+                    container.classList.remove('shake');
+                    hideMessage();
+                }, 1000);
+            }
+        }
+        
+        // Unlock the system
+        function unlockSystem() {
+            isUnlocked = true;
+            document.body.classList.add('unlocked');
+            document.getElementById('mainContent').classList.add('show');
+            document.getElementById('lockContainer').style.display = 'none';
+            
+            // Show magic exit button with delay
+            setTimeout(() => {
+                showMagicButton();
+            }, 1500);
+            
+            // Add scroll listener for magic button effect
+            window.addEventListener('scroll', handleScrollForMagicButton);
+        }
+        
+        // Show magic exit button with animation
+        function showMagicButton() {
+            const magicBtn = document.getElementById('magicExitBtn');
+            magicBtn.classList.add('show');
+            
+            // Create particles
+            createMagicParticles();
+        }
+        
+        // Create floating particles
+        function createMagicParticles() {
+            for (let i = 0; i < 15; i++) {
+                createParticle();
+            }
+        }
+        
+        // Create single particle
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Random position around the button
+            const btn = document.getElementById('magicExitBtn');
+            const btnRect = btn.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
+            
+            // Random position around button
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 80 + Math.random() * 40;
+            const startX = Math.cos(angle) * distance;
+            const startY = Math.sin(angle) * distance;
+            
+            particle.style.left = (btnCenterX + startX) + 'px';
+            particle.style.top = (btnCenterY + startY) + 'px';
+            
+            // Random movement
+            const endX = (Math.random() - 0.5) * 200;
+            const endY = -100 - Math.random() * 100;
+            
+            particle.style.setProperty('--tx', endX + 'px');
+            particle.style.setProperty('--ty', endY + 'px');
+            
+            // Random size and color
+            const size = 2 + Math.random() * 4;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            
+            const hue = 200 + Math.random() * 60;
+            particle.style.background = `hsla(${hue}, 100%, 70%, ${0.3 + Math.random() * 0.4})`;
+            
+            // Random animation delay and duration
+            const delay = Math.random() * 2;
+            const duration = 2 + Math.random() * 2;
+            particle.style.animationDelay = delay + 's';
+            particle.style.animationDuration = duration + 's';
+            
+            document.body.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.remove();
+                }
+            }, (delay + duration) * 1000);
+        }
+        
+        // Handle scroll for magic button effect
+        function handleScrollForMagicButton() {
+            const magicBtn = document.getElementById('magicExitBtn');
+            
+            // Add glow effect when scrolling
+            magicBtn.classList.add('scroll-glow');
+            
+            // Clear previous timer
+            if (scrollTimer) {
+                clearTimeout(scrollTimer);
+            }
+            
+            // Remove glow after scrolling stops
+            scrollTimer = setTimeout(() => {
+                magicBtn.classList.remove('scroll-glow');
+            }, 500);
+            
+            // Create occasional particles on scroll
+            if (Math.random() > 0.7) {
+                createParticle();
+            }
+        }
+        
+        // Magic logout with effects
+        function magicLogout() {
+            const magicBtn = document.getElementById('magicExitBtn');
+            
+            // Add click animation
+            magicBtn.style.transform = 'scale(0.8) rotate(-15deg)';
+            
+            // Create explosion of particles
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    createParticle();
+                }, i * 30);
+            }
+            
+            // Show goodbye message
+            showMessageOnButton('Sampai jumpa! ✨');
+            
+            // Logout after delay
+            setTimeout(() => {
+                localStorage.removeItem('creative_portal_unlocked');
+                localStorage.removeItem('portal_unlock_time');
+                location.reload();
+            }, 1500);
+        }
+        
+        // Show temporary message on magic button
+        function showMessageOnButton(text) {
+            const magicBtn = document.getElementById('magicExitBtn');
+            const originalContent = magicBtn.innerHTML;
+            
+            magicBtn.innerHTML = `<div style="font-size: 14px; font-weight: 500;">${text}</div>`;
+            magicBtn.style.width = '120px';
+            magicBtn.style.height = '120px';
+            magicBtn.style.borderRadius = '25px';
+            magicBtn.style.fontSize = '16px';
+            
+            setTimeout(() => {
+                magicBtn.innerHTML = originalContent;
+                magicBtn.style.width = '';
+                magicBtn.style.height = '';
+                magicBtn.style.borderRadius = '';
+                magicBtn.style.fontSize = '';
+            }, 1200);
+        }
+        
+        // Show message
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type} show`;
+        }
+        
+        // Hide message
+        function hideMessage() {
+            document.getElementById('message').classList.remove('show');
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') {
+                addDigit(e.key);
+            } else if (e.key === 'Backspace') {
+                deleteDigit();
+            } else if (e.key === 'Escape') {
+                clearPin();
+            } else if (e.key === 'Enter' && currentPin.length === 6) {
+                verifyPin();
+            }
+        });
+        
+        // Security measures
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Initialize
+        window.onload = function() {
+            checkLoginStatus();
+        };
+    </script>
+</body>
+</html>
